@@ -8,4 +8,7 @@ module.exports = (app: Express) => {
     app.route(rootUrl + '/users/:id')
         .get(users.readUser);
 
+    app.route(rootUrl + '/users/register')
+        .post(users.createUser);
+
 };
