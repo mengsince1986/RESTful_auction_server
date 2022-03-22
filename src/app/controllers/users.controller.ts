@@ -24,20 +24,18 @@ const readUser = async (req: Request, res: Response):Promise<void> => {
 };
 
 const createUser = async (req: Request, res: Response):Promise<void> => {
-    Logger.http( `POST create a user with user name ${req.body.lastname}`);
+    Logger.http( `POST create a user with user name ${req.body.lastName}`);
     if (!req.body.hasOwnProperty("firstName") || !req.body.hasOwnProperty("lastName") || !req.body.hasOwnProperty("email") || !req.body.hasOwnProperty("password")){
-        res.status(400).send("Please provide full information of a new user");
+        res.status(400).send("Bad Request");
         return
     }
-    const firstname = req.body.firstName;
-    const lastname = req.body.lastName;
-    const email = req.body.email;
-    const password = req.body.userPassword;
+
     try {
-        const result = await Users.insertUser(firstname, lastname, email, password);
-        res.status(201).send(result[0]);
+        const result = await Users.insertUser(req.body.firstName,  req.body.lastName, req.body.email, req.body.password);
+        res.setHeader('Content-Type', 'application/json');
+        res.status(201).send({"userId": result.insertId});
     } catch(err) {
-        res.status(500).send(`ERROR creating user ${lastname}`);
+        res.status(500).send(`Internal Server Error: ${err}`);
     }
 };
 

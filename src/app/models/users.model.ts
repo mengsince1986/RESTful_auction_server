@@ -14,9 +14,9 @@ const getOneUser = async (id:number): Promise<any> => {
 const insertUser = async (firstName: string, lastName: string, email: string, password: string): Promise<any> => {
   Logger.info(`Adding user ${lastName} to the database`);
   const conn = await getPool().getConnection();
-  const query = 'insert into user (first_name, last_name, email, password) values (?)';
-  const [result]  = await conn.query( query, [ firstName, lastName, email, password ] );
-  conn.release();
+  const query = 'insert into user (email, first_name, last_name, password) values (?, ?, ? ,?)';
+  const [result] = await conn.query( query, [ email, firstName, lastName, password ] );
+    conn.release();
   return result;
 };
 
