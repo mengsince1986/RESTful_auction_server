@@ -78,7 +78,7 @@ const loginUser = async (req: Request, res: Response): Promise<void> => {
 
     try {
         const userInfo = await Users.signInUser(req.body.email, req.body.password);
-        if(userInfo.length === 0) {
+        if(userInfo === null) {
             res.status(400).send('The email and password match no user');
         } else {
             const signedInUserID: number = userInfo[0].id;
