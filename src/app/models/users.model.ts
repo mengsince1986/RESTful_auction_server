@@ -1,6 +1,7 @@
 import {getPool} from "../../config/db";
 import Logger from "../../config/logger";
 import {OkPacket, ResultSetHeader, RowDataPacket} from "mysql2";
+import { uid } from 'rand-token';
 
 const getOneUser = async (id:number): Promise<any> => {
   Logger.info(`Getting user ${id} from the database`);
@@ -23,7 +24,6 @@ const insertUser = async (firstName: string, lastName: string, email: string, pa
 const signInUser = async (email: string, password: string): Promise<any> => {
   Logger.info(`Signing in user ${email} from the database`);
   const conn =await getPool().getConnection();
-  const authToken:string = "test-token-v5"; // generate static token
   const passwordHash = password; // hash password
   let result;
   const query1 = 'select * from user where email=? and password=?';
@@ -32,6 +32,7 @@ const signInUser = async (email: string, password: string): Promise<any> => {
     Logger.info("User not exists");
     result = result1;
   } else {
+    const authToken:string = uid(32); // generate token with rand-token
     const query2 = 'update user set auth_token = ? where email=? and password=?';
     await conn.query(query2, [authToken, email, password]);
     Logger.info("User exists. AuthToken updated.");
