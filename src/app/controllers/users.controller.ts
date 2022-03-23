@@ -39,15 +39,31 @@ const readUser = async (req: Request, res: Response):Promise<void> => {
 
 const createUser = async (req: Request, res: Response):Promise<void> => {
     Logger.http( `POST create a user with user name ${req.body.lastName}`);
-    if (!req.body.hasOwnProperty("firstName") || !req.body.hasOwnProperty("lastName") || !req.body.hasOwnProperty("email") || !req.body.hasOwnProperty("password")){
-        res.status(400).send("Bad Request");
+    const isCompleteInfo: boolean = req.body.hasOwnProperty("firstName") && req.body.hasOwnProperty("lastName") && req.body.hasOwnProperty("email") && req.body.hasOwnProperty("password");
+    if (!isCompleteInfo){
+        res.status(400).send("Error: Information is not complete.\nProvide firstName, lastName, email, and password to register.");
         return;
     }
-
+    const validEmailFormat = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+    const isValidEmail: boolean = validEmailFormat.test(req.body.email);
+    if (!isValidEmail){
+        res.status(400).send("Error: Invalid email address.");
+        return;
+    }
+    const isNonEmptyPassword: boolean = req.body.password.length > 0;
+    if (!isNonEmptyPassword) {
+        res.status(400).send("Error: Password can't be empty.");
+        return;
+    }
     try {
         const result = await Users.insertUser(req.body.firstName,  req.body.lastName, req.body.email, req.body.password);
-        res.setHeader('Content-Type', 'application/json');
-        res.status(201).send({"userId": result.insertId});
+        if (result !== null) {
+            res.setHeader('Content-Type', 'application/json');
+            res.status(201).send({"userId": result.insertId});
+        } else {
+            res.status(400).send("Error: Email address has already been registered.");
+            return;
+        }
     } catch(err) {
         res.status(500).send(`Internal Server Error: ${err}`);
     }

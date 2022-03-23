@@ -15,10 +15,16 @@ const getOneUser = async (id:number): Promise<any> => {
 const insertUser = async (firstName: string, lastName: string, email: string, password: string): Promise<any> => {
   Logger.info(`Adding user ${lastName} to the database`);
   const conn = await getPool().getConnection();
-  const query = 'insert into user (email, first_name, last_name, password) values (?, ?, ? ,?)';
-  const [result] = await conn.query( query, [ email, firstName, lastName, password ] );
+  const query1 = 'select * from user where email=?';
+  const [existedUser] = await conn.query(query1, [email]);
+  if (existedUser.length > 0) {
+    return null;
+  } else {
+    const query = 'insert into user (email, first_name, last_name, password) values (?, ?, ? ,?)';
+    const [result] = await conn.query( query, [ email, firstName, lastName, password ] );
     conn.release();
-  return result;
+    return result;
+  }
 };
 
 const signInUser = async (email: string, password: string): Promise<any> => {
