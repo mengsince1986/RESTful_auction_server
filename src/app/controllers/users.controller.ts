@@ -2,9 +2,14 @@ import {Request, Response} from "express";
 import Logger from '../../config/logger';
 import * as Users from '../models/users.model';
 import * as Authenticate from '../models/authentication.model';
+import { UserAuthInfoRequest } from "../../types";
 
 const readUser = async (req: Request, res: Response):Promise<void> => {
     Logger.http(`GET information about user ${req.params.id}`);
+    if (isNaN(parseInt(req.params.id, 10))) {
+        res.status(404).send("Provided id is invalid");
+        return;
+    }
     const id = req.params.id;
     try {
         const userInfo = await Users.getOneUser(parseInt(id, 10));
@@ -16,12 +21,6 @@ const readUser = async (req: Request, res: Response):Promise<void> => {
             const userEmail: string = userInfo[0].email;
             let result;
             const signedInUser = await Authenticate.findUserIdByToken(req.header('X-Authorization'));
-           // Logger.http(`The user token: ${req.header('X-Authorization')}`);
-           // const signedInUserLen = signedInUser.length;
-           // const signedInUserID = signedInUser[0].id;
-           // Logger.http(`signedInUser length: ${signedInUserLen}`);
-           // Logger.http(`signedInUser ID: ${signedInUserID}`);
-           // Logger.http(`current user ID: ${id}`)
             if ((signedInUser.length !== 0) && (signedInUser[0].id === parseInt(id, 10))) {
                 result = JSON.stringify({firstName: first_name, lastName: last_name, email: userEmail});
             } else {
@@ -90,7 +89,22 @@ const loginUser = async (req: Request, res: Response): Promise<void> => {
     } catch(err) {
         res.status(500).send(`Internal Server Error: ${err}`);
     }
-
 };
 
-export { readUser, createUser, loginUser }
+const logoutUser = async (req: UserAuthInfoRequest, res: Response): Promise<void> => {
+    Logger.http(`POST log out user with id ${req.authenticatedUserId}`);
+    try {
+        const result = await Users.signOutUser(req.authenticatedUserId);
+        const resultAuth = result[0].auth_token;
+        const resultEmail = result[0].email;
+        if (resultAuth === null) {
+            res.status(200).send(`User ${resultEmail} logout successfully`);
+        } else {
+            res.status(401).send("Can't log out. Try again.");
+        }
+    } catch(err) {
+        res.status(500).send(`Internal Server Error: ${err}`);
+    }
+};
+
+export { readUser, createUser, loginUser, logoutUser }

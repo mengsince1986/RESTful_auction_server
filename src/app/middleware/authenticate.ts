@@ -2,12 +2,10 @@ import {Request, Response} from "express";
 import Logger from '../../config/logger';
 import * as Auth from '../models/authentication.model';
 import { UserAuthInfoRequest } from "../../types";
-import {promises} from "dns";
+import exp from "constants";
 
-
-exports.loginRequired = async (req:UserAuthInfoRequest, res:Response, next: () => void) => {
+const loginRequired = async (req:UserAuthInfoRequest, res:Response, next: () => void) => {
     const token:string = req.header('X-Authorization');
-
     try {
         const result = await Auth.findUserIdByToken(token);
         if (result.length === 0) {
@@ -15,7 +13,7 @@ exports.loginRequired = async (req:UserAuthInfoRequest, res:Response, next: () =
             res.status(401)
                 .send();
         } else {
-            req.authenticatedUserId = result[0].user_id.toString();
+            req.authenticatedUserId = result[0].id.toString();
             next();
         }
     } catch (err) {
@@ -25,3 +23,5 @@ exports.loginRequired = async (req:UserAuthInfoRequest, res:Response, next: () =
             .send();
     }
 };
+
+export {loginRequired};

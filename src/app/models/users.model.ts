@@ -34,7 +34,7 @@ const insertUser = async (firstName: string, lastName: string, email: string, pa
 
 const signInUser = async (email: string, password: string): Promise<any> => {
   Logger.info(`Signing in user ${email} from the database`);
-  const conn =await getPool().getConnection();
+  const conn = await getPool().getConnection();
   const query1 = 'select * from user where email=?';
   const [existedUser] = await conn.query(query1, [email]);
   if (existedUser.length === 0) {
@@ -55,6 +55,18 @@ const signInUser = async (email: string, password: string): Promise<any> => {
   const [result] = await conn.query(query1, [email]);
   conn.release();
   return result;
-}
+};
 
-export {getOneUser, insertUser, signInUser}
+const signOutUser = async (userID: string): Promise<any> => {
+  Logger.info(`Signing out user ${userID} from the database`);
+  const conn = await getPool().getConnection();
+  const userIDNum: number = parseInt(userID, 10);
+  const query1 =  'update user set auth_token = null where id=?';
+  await conn.query(query1, [userIDNum]);
+  const query2 = 'select * from user where id=?';
+  const [result] = await conn.query(query2, [userIDNum]);
+  conn.release();
+  return result;
+};
+
+export {getOneUser, insertUser, signInUser, signOutUser}
