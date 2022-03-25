@@ -6,7 +6,8 @@ import * as Authenticate from '../middleware/authenticate';
 module.exports = (app: Express) => {
 
     app.route(rootUrl + '/users/:id')
-        .get(users.readUser);
+        .get(users.readUser)
+        .patch(Authenticate.loginRequired, users.updateUser);
 
     app.route(rootUrl + '/users/register')
         .post(users.createUser);

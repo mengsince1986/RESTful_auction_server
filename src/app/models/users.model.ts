@@ -69,4 +69,39 @@ const signOutUser = async (userID: string): Promise<any> => {
   return result;
 };
 
-export {getOneUser, insertUser, signInUser, signOutUser}
+const ifUsedEmail = async (email: string): Promise<any> => {
+  Logger.info(`Checking if ${email} in the database`);
+  const conn = await getPool().getConnection();
+  const query = 'select * from user where email=?';
+  const [result] = await conn.query(query, [ email ]);
+  if (result.length > 0) {
+    conn.release();
+    return true;
+  } else {
+    conn.release();
+    return false;
+  }
+};
+
+const alterUser = async (userID: string, column: string, value: string): Promise<any> => {
+  Logger.info( `Updating ${column} for current signed-in user`);
+  const conn = await getPool().getConnection();
+  const userIDNum: number = parseInt(userID, 10);
+  const query = 'update user set ? = ? where id=?';
+  const result = await conn.query(query, [column, value, userIDNum]);
+  if (result.affectedRows > 0) {
+    return `${column} is updated`;
+  } else {
+    return `Database Error: ${column} is NOT updated.`
+  }
+}
+
+const ifValidPassword = async (userID: string, userPassword: string): Promise<any> => {
+  Logger.info(`Checking ${userID}'s password`);
+}
+
+const alterUserPassword = async (userID: string, userPassword: string): Promise<any> => {
+  Logger.info(`Updating ${userID}'s password`);
+}
+
+export {getOneUser, insertUser, signInUser, signOutUser, ifUsedEmail, alterUser, ifValidPassword, alterUserPassword}

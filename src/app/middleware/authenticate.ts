@@ -11,7 +11,7 @@ const loginRequired = async (req:UserAuthInfoRequest, res:Response, next: () => 
         if (result.length === 0) {
             res.statusMessage = 'Unauthorized';
             res.status(401)
-                .send();
+                .send("Operation requires login first.");
         } else {
             req.authenticatedUserId = result[0].id.toString();
             next();
