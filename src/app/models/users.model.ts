@@ -84,24 +84,40 @@ const ifUsedEmail = async (email: string): Promise<any> => {
 };
 
 const alterUser = async (userID: string, column: string, value: string): Promise<any> => {
-  Logger.info( `Updating ${column} for current signed-in user`);
+  Logger.info( `Updating User ${userID}'s ${column} to ${value} for current signed-in user`);
   const conn = await getPool().getConnection();
   const userIDNum: number = parseInt(userID, 10);
-  const query = 'update user set ? = ? where id=?';
-  const result = await conn.query(query, [column, value, userIDNum]);
-  if (result.affectedRows > 0) {
-    return `${column} is updated`;
-  } else {
-    return `Database Error: ${column} is NOT updated.`
-  }
+  const query = `update user set ${column} = ? where id=?`;
+  await conn.query(query, [value, userIDNum]);
+  return `Updated ${column}`;
 }
 
 const ifValidPassword = async (userID: string, userPassword: string): Promise<any> => {
   Logger.info(`Checking ${userID}'s password`);
+  const conn = await getPool().getConnection();
+  const query = 'select * from user where id=?';
+  const userIDNum: number = parseInt(userID, 10);
+  const [existedUser] = await conn.query(query, [userIDNum]);
+  const existedPassword = existedUser[0].password;
+  if (!bcrypt.compareSync(userPassword, existedPassword)) {
+    Logger.info("Wrong password.");
+    conn.release();
+    return false;
+  } else {
+    conn.release();
+    return true;
+  }
 }
 
 const alterUserPassword = async (userID: string, userPassword: string): Promise<any> => {
   Logger.info(`Updating ${userID}'s password`);
+  const conn = await getPool().getConnection();
+  const passwordHash = bcrypt.hashSync(userPassword, saltRounds);
+  const query = `update user set password = ? where id=?`;
+  const userIDNum: number = parseInt(userID, 10);
+  await conn.query( query, [ passwordHash, userIDNum ] );
+  conn.release();
+  return `${userID}'s password is updated`;
 }
 
 export {getOneUser, insertUser, signInUser, signOutUser, ifUsedEmail, alterUser, ifValidPassword, alterUserPassword}

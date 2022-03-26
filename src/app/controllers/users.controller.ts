@@ -110,10 +110,10 @@ const logoutUser = async (req: UserAuthInfoRequest, res: Response): Promise<void
 };
 
 const updateUser = async (req: UserAuthInfoRequest, res: Response): Promise<void> => {
-    Logger.http(`PATCH update user`);
+    Logger.http(`PATCH update user with ID ${req.params.id}`);
     // check if user id is the signed-in id
-    if (parseInt(req.params.id, 10) === parseInt(req.authenticatedUserId,10)) {
-        res.status(400).send("Provided id is invalid or not the signed-in id");
+    if (parseInt(req.params.id, 10) !== parseInt(req.authenticatedUserId,10)) {
+        res.status(403).send("Provided id is invalid or not the signed-in id");
         return;
     }
     // update the columns one by one
@@ -131,6 +131,7 @@ const updateUser = async (req: UserAuthInfoRequest, res: Response): Promise<void
     // update lastName if available
     if (req.body.hasOwnProperty("lastName") && req.body.lastName.length > 0) {
         try {
+            result += "\n";
             result += await Users.alterUser(req.params.id, "last_name", req.body.lastName);
         } catch(err) {
             res.status(500).send(`Internal Server Error: ${err}`);
@@ -138,16 +139,23 @@ const updateUser = async (req: UserAuthInfoRequest, res: Response): Promise<void
         }
     }
     // update email if available
-    if (req.body.hasOwnProperty("email") && validEmailFormat.test(req.body.email)) {
-        try {
-            const isUsedEmail = Users.ifUsedEmail(req.body.email);
-            if (isUsedEmail) {
-                result += "Can't update email which is already in use"
-            } else {
-                result += await Users.alterUser(req.params.id, "email", req.body.email);
+    if (req.body.hasOwnProperty("email")) {
+        if (validEmailFormat.test(req.body.email)) {
+            try {
+                const isUsedEmail = await Users.ifUsedEmail(req.body.email);
+                if (isUsedEmail) {
+                    res.status(403).send("Forbidden to update email which is already in use");
+                    return;
+                } else {
+                    result += "\n";
+                    result += await Users.alterUser(req.params.id, "email", req.body.email);
+                }
+            } catch(err) {
+                res.status(500).send(`Internal Server Error: ${err}`);
+                return;
             }
-        } catch(err) {
-            res.status(500).send(`Internal Server Error: ${err}`);
+        } else {
+            res.status(400).send("Not valid email format");
             return;
         }
     }
@@ -155,10 +163,12 @@ const updateUser = async (req: UserAuthInfoRequest, res: Response): Promise<void
     if (req.body.hasOwnProperty("password") && req.body.password.length > 0) {
         if (req.body.hasOwnProperty("currentPassword") && req.body.currentPassword.length > 0) {
             try {
-                const isValidCurrentPassword = Users.ifValidPassword(req.params.id, req.body.currentPassword);
+                const isValidCurrentPassword = await Users.ifValidPassword(req.params.id, req.body.currentPassword);
                 if (isValidCurrentPassword) {
+                    result += "\n";
                     result += await Users.alterUserPassword(req.params.id, req.body.password);
                 } else {
+                    result += "\n";
                     result += "Can't update password. The current password is not valid."
                 }
             } catch(err) {
@@ -166,9 +176,12 @@ const updateUser = async (req: UserAuthInfoRequest, res: Response): Promise<void
                 return;
             }
         } else {
+            result += "\n";
             result += "Can't update password. The current password is needed."
         }
     }
+
+    res.status(200).send(result);
 };
 
 
