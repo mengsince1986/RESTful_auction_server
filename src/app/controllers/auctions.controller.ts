@@ -6,6 +6,25 @@ import { UserAuthInfoRequest } from "../../types";
 
 const listAuctions = async (req: Request, res: Response): Promise<void> => {
     Logger.http(`GET information about auctions}`);
+    const query = "select " +
+        "auctionId, title, reserve, sellerId, categoryId, sellerFirstName, sellerLastName, endDate, coalesce(numBids,0), highestBid " +
+        "from " +
+        "(select auction.id as auctionId, title, reserve, seller_id as sellerId, category_id as categoryId, " +
+        "first_name as sellerFirstName, last_name as sellerLastName, end_date as endDate " +
+        "from auction left join user " +
+        "on auction.seller_id = user.id) as t1 left join " +
+        "(select auction_id, user_id, count(auction_id) as numBids, max(amount) as highestBid from auction_bid group by auction_id) as t2 " +
+        "on t1.auctionId = t2.auction_id order by endDate, auction_id asc"
+    try {
+        const auctionData = await Auctions.getAuctions(query);
+        const result = {auctions: auctionData, count: auctionData.length}
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(JSON.stringify(result));
+    } catch (err) {
+        if (!err.hasBeenLogged) Logger.error(err);
+        res.statusMessage = 'Internal Server Error';
+        res.status(500).send();
+    }
 }
 
 /*
