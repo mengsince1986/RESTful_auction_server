@@ -64,7 +64,6 @@ const listAuctions = async (req: Request, res: Response): Promise<void> => {
 
 const listOneAuction = async (req: Request, res: Response): Promise<void> => {
     Logger.http(`Get information about one auction`);
-
     // check if id is valid number
     let auctionId: string;
     if (isNaN(parseInt(req.params.id, 10))) {
@@ -172,7 +171,7 @@ const createAuction = async (req: UserAuthInfoRequest, res: Response): Promise<v
         res.statusMessage = 'Internal Server Error';
         res.status(500).send();
     }
-}
+};
 
 const listCategories = async (req: Request, res: Response): Promise<void> => {
     Logger.http(`GET information of all auction categories`);
@@ -185,7 +184,42 @@ const listCategories = async (req: Request, res: Response): Promise<void> => {
         res.statusMessage = 'Internal Server Error';
         res.status(500).send();
     }
-}
+};
+
+const deleteAuction = async (req: UserAuthInfoRequest, res: Response): Promise<void> => {
+    Logger.http(`DELETE one auction`);
+    // check if id is valid number
+    let auctionId: string;
+    if (isNaN(parseInt(req.params.id, 10))) {
+        res.status(404).send("Auction id is invalid");
+        return;
+    } else {
+        auctionId = req.params.id;
+    }
+    // check if auction of id belongs to current signed-in user
+    // check if bid has been placed
+    const currentUserId = parseInt(req.authenticatedUserId, 10);
+    try {
+        const toRemovedAuction = await Auctions.getOneAuction(auctionId);
+        if (Object.keys(toRemovedAuction).length === 0) {
+            res.status(404).send("The auction does not exist.");
+            return;
+        } else if (toRemovedAuction[0].sellerId !== currentUserId) {
+            res.status(403).send("Can't remove auction that doesn't belong to the current user.");
+            return;
+        } else if (await Auctions.ifBidPlaced(auctionId)) {
+            res.status(403).send("Can't remove auction at which has been placed bid.");
+            return;
+        }else {
+            const result = await Auctions.removeOneAuction(auctionId);
+            res.status(200).send(`Auction ${auctionId} has been removed`);
+        }
+    } catch (err) {
+        if (!err.hasBeenLogged) Logger.error(err);
+        res.statusMessage = 'Internal Server Error';
+        res.status(500).send();
+    }
+};
 
 /*
 const readUser = async (req: Request, res: Response):Promise<void> => {
@@ -221,4 +255,4 @@ const readUser = async (req: Request, res: Response):Promise<void> => {
 };
  */
 
-export { listAuctions, listOneAuction, createAuction, listCategories }
+export { listAuctions, listOneAuction, createAuction, listCategories, deleteAuction }

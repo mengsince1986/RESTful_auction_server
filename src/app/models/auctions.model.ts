@@ -151,7 +151,6 @@ const getOneAuction = async (id: string): Promise<any> => {
 const insertAuction = async (title: string, description: string, reserve: number, categoryId: number, endDate: string, sellerId: string): Promise<any> => {
     Logger.info(`Inserting one auction`);
     const conn = await getPool().getConnection();
-    // default query
     const insertQuery = `insert into auction (category_id, description, end_date, reserve, seller_id, title) values (?,?,?,?,?,?) `;
     const [result] = await conn.query(insertQuery, [categoryId, description, endDate, reserve, sellerId, title]);
     conn.release();
@@ -161,7 +160,6 @@ const insertAuction = async (title: string, description: string, reserve: number
 const ifValidCategoryId = async (categoryId: number): Promise<any> => {
     Logger.info(`Checking auction categoryId`);
     const conn = await getPool().getConnection();
-    // default query
     const query = `select * from category where id=?`;
     const [result] = await conn.query(query, [categoryId]);
     conn.release();
@@ -171,11 +169,28 @@ const ifValidCategoryId = async (categoryId: number): Promise<any> => {
 const getCategories = async (): Promise<any> => {
     Logger.info(`Getting all auction categories`);
     const conn = await getPool().getConnection();
-    // default query
     const query = `select * from category`;
     const [result] = await conn.query(query);
     conn.release();
     return result;
+};
+
+const removeOneAuction = async (auctionId: string): Promise<any> => {
+    Logger.info(`Removing an auction`);
+    const conn = await getPool().getConnection();
+    const query = `delete from auction where id=?`;
+    const result = await conn.query(query, [auctionId]);
+    conn.release();
+    return result;
+};
+
+const ifBidPlaced = async (auctionId: string): Promise<any> => {
+    Logger.info(`Checking if a bid has been placed`);
+    const conn = await getPool().getConnection();
+    const query = `select * from auction_bid where auction_id = ?`;
+    const [result] = await conn.query(query, [auctionId]);
+    conn.release();
+    return result.length > 0;
 }
 
-export { getAuctions, getOneAuction, insertAuction, ifValidCategoryId, getCategories }
+export { getAuctions, getOneAuction, insertAuction, ifValidCategoryId, getCategories, removeOneAuction, ifBidPlaced }

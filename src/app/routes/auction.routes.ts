@@ -13,5 +13,6 @@ module.exports = (app: Express) => {
         .get(auctions.listCategories);
 
     app.route(rootUrl + '/auctions/:id')
-        .get(auctions.listOneAuction);
+        .get(auctions.listOneAuction)
+        .delete(Authenticate.loginRequired, auctions.deleteAuction);
 };
