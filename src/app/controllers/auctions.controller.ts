@@ -4,128 +4,6 @@ import * as Auctions from '../models/auctions.model';
 import * as Authenticate from '../models/authentication.model';
 import { UserAuthInfoRequest } from "../../types";
 
-/*
-const listAuctions = async (req: Request, res: Response): Promise<void> => {
-    Logger.http(`GET information about auctions}`);
-    // default query
-    let query = "select " +
-        "auctionId, title, reserve, sellerId, categoryId, sellerFirstName, sellerLastName, endDate, coalesce(numBids,0) as numBids, highestBid " +
-        "from " +
-        "(select auction.id as auctionId, title, description, reserve, seller_id as sellerId, category_id as categoryId, " +
-        "first_name as sellerFirstName, last_name as sellerLastName, end_date as endDate " +
-        "from auction left join user " +
-        "on auction.seller_id = user.id) as t1 left join " +
-        "(select auction_id, user_id, count(auction_id) as numBids, max(amount) as highestBid " +
-        "from auction_bid group by auction_id) as t2 on t1.auctionId = t2.auction_id"
-    // where query for q
-    if (req.query.q !== undefined) {
-        if (!query.includes(" where ")) {
-            query += " where";
-        } else {
-            query += " and";
-        }
-        const qQuery = ` t1.title like "%${req.query.q}%" or t1.description like "%${req.query.q}%"`;
-        query += qQuery;
-    }
-    // where query for categoryIds
-    if (req.query.categoryIds !== undefined) {
-        if (!query.includes(" where ")) {
-           query += " where";
-        } else {
-            query += " and";
-        }
-        if (Array.isArray(req.query.categoryIds)) {
-            let currentCategoryId = req.query.categoryIds[0];
-            let categoryIdsQuery = ` categoryId = ${currentCategoryId}`;
-            query += categoryIdsQuery;
-            for (let i = 1; i < req.query.categoryIds.length; i++) {
-                currentCategoryId = req.query.categoryIds[i];
-                categoryIdsQuery = ` or categoryId = ${currentCategoryId}`;
-                query += categoryIdsQuery;
-            }
-        } else {
-            const categoryIdsQuery = ` categoryId = ${req.query.categoryIds}`;
-            query += categoryIdsQuery;
-        }
-    }
-    // where query for sellerId
-    if (req.query.sellerId !== undefined) {
-        if (!query.includes(" where ")) {
-            query += " where";
-        } else {
-            query += " and";
-        }
-        const sellerIdQuery = ` t1.sellerId = ${req.query.sellerId}`;
-        query += sellerIdQuery;
-    }
-    // where query for bidderId
-    if (req.query.bidderId !== undefined) {
-        if (!query.includes(" where ")) {
-            query += " where";
-        } else {
-            query += " and";
-        }
-        const bidderIdQuery = ` t2.user_id = ${req.query.bidderId}`;
-        query += bidderIdQuery;
-    }
-    // order query
-    if (req.query.sortBy !== undefined) {
-        let orderQuery = "";
-        switch(req.query.sortBy) {
-            case "ALPHABETICAL_ASC":
-                orderQuery = " order by title asc";
-                break;
-            case "ALPHABETICAL_DESC":
-                orderQuery = " order by title desc";
-                break;
-            case "CLOSING_SOON":
-                orderQuery = " order by endDate asc";
-                break;
-            case "CLOSING_LAST":
-                orderQuery = " order by endDate desc";
-                break;
-            case "BIDS_ASC":
-                orderQuery = " order by highestBid asc";
-                break;
-            case "BIDS_DESC":
-                orderQuery = " order by highestBid desc";
-                break;
-            case "RESERVE_ASC":
-                orderQuery = " order by reserve asc";
-                break;
-            case "RESERVE_DESC":
-                orderQuery = " order by reserve desc";
-                break;
-        }
-        query += orderQuery;
-    } else {
-        const orderQuery = " order by endDate, auction_id asc";
-        query += orderQuery;
-    }
-    // limit query for startIndex and count
-    let offset: any = 0;
-    let rowcount: any = 1844674407370955161;
-    if (req.query.startIndex !== undefined) {
-        offset = req.query.startIndex;
-    }
-    if (req.query.count !== undefined) {
-        rowcount = req.query.count;
-    }
-    const startIndexQuery = ` limit ${offset}, ${rowcount}`;
-    query += startIndexQuery;
-    try {
-        const auctionData = await Auctions.getAuctions(query);
-        const result = {count: auctionData.length, auctions: auctionData}
-        res.setHeader('Content-Type', 'application/json');
-        res.status(200).send(JSON.stringify(result));
-    } catch (err) {
-        if (!err.hasBeenLogged) Logger.error(err);
-        res.statusMessage = 'Internal Server Error';
-        res.status(500).send();
-    }
-}
-*/
-
 const listAuctions = async (req: Request, res: Response): Promise<void> => {
     Logger.http(`GET information about auctions}`);
     let startIndex: string|null;
@@ -213,8 +91,87 @@ const listOneAuction = async (req: Request, res: Response): Promise<void> => {
 };
 
 
-const createAuction = async (req: Request, res: Response): Promise<void> => {
+const createAuction = async (req: UserAuthInfoRequest, res: Response): Promise<void> => {
     Logger.http(`POST create a new auction`);
+    // check title
+    let title: string;
+    if (typeof req.body.title === "string" && req.body.title.length > 0) {
+        title = req.body.title;
+    } else {
+        res.status(400).send('A tile is required');
+        return;
+    }
+    // check description
+    let description: string;
+    if (typeof req.body.description === "string" && req.body.description.length > 0) {
+        description = req.body.description;
+    } else {
+        res.status(400).send('A description is required');
+        return;
+    }
+    // check reserve
+    let reserve: number;
+    if (req.body.reserve === undefined) {
+        reserve = 1;
+    } else if (typeof req.body.reserve === "number") {
+        reserve = req.body.reserve;
+    } else {
+        res.status(400).send('reserve should be a number');
+        return;
+    }
+    // check categoryId
+    let categoryId: number;
+    if (typeof req.body.categoryId === "number") {
+        try {
+            const isValidCategoryId = await Auctions.ifValidCategoryId(req.body.categoryId);
+            if (isValidCategoryId) {
+                categoryId = req.body.categoryId;
+            } else {
+                res.status(400).send('categoryId does not exist');
+                return;
+            }
+        } catch (err) {
+            if (!err.hasBeenLogged) Logger.error(err);
+            res.statusMessage = 'Internal Server Error';
+            res.status(500).send();
+            return;
+        }
+    } else {
+        res.status(400).send('categoryId is invalid');
+        return;
+    }
+    // check endDate
+    let endDate: string;
+    if (typeof req.body.endDate === "string" && typeof Date.parse(req.body.endDate) === "number") {
+        if (Date.parse(req.body.endDate) > Date.now()) {
+            endDate = req.body.endDate;
+        } else {
+            res.status(400).send('The endDate should be in the future');
+            return;
+        }
+    } else {
+        res.status(400).send('The endDate is invalid');
+        return;
+    }
+    // check sellerId
+    let sellerId: string;
+    if (req.body.sellerId === undefined || req.body.sellerId.toString() === req.authenticatedUserId) {
+        sellerId =  req.authenticatedUserId;
+    } else {
+        res.status(400).send('sellerId should be the signed-in id');
+        return;
+    }
+    try {
+        const insertResult = await Auctions.insertAuction(title, description, reserve, categoryId, endDate, sellerId);
+        const result = {auctionId: insertResult.insertId};
+       // const result = insertResult;
+        res.setHeader('Content-Type', 'application/json');
+        res.status(201).send(JSON.stringify(result));
+    } catch (err) {
+        if (!err.hasBeenLogged) Logger.error(err);
+        res.statusMessage = 'Internal Server Error';
+        res.status(500).send();
+    }
 }
 
 /*

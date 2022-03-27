@@ -148,4 +148,24 @@ const getOneAuction = async (id: string): Promise<any> => {
     return result;
 };
 
-export { getAuctions, getOneAuction }
+const insertAuction = async (title: string, description: string, reserve: number, categoryId: number, endDate: string, sellerId: string): Promise<any> => {
+    Logger.info(`Inserting one auction`);
+    const conn = await getPool().getConnection();
+    // default query
+    const insertQuery = `insert into auction (category_id, description, end_date, reserve, seller_id, title) values (?,?,?,?,?,?) `;
+    const [result] = await conn.query(insertQuery, [categoryId, description, endDate, reserve, sellerId, title]);
+    conn.release();
+    return result;
+};
+
+const ifValidCategoryId = async (categoryId: number): Promise<any> => {
+    Logger.info(`Checking auction categoryId`);
+    const conn = await getPool().getConnection();
+    // default query
+    const query = `select * from category where id=?`;
+    const [result] = await conn.query(query, [categoryId]);
+    conn.release();
+    return result.length > 0;
+};
+
+export { getAuctions, getOneAuction, insertAuction, ifValidCategoryId }
