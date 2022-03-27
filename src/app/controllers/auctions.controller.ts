@@ -3,6 +3,7 @@ import Logger from '../../config/logger';
 import * as Auctions from '../models/auctions.model';
 import * as Authenticate from '../models/authentication.model';
 import { UserAuthInfoRequest } from "../../types";
+
 /*
 const listAuctions = async (req: Request, res: Response): Promise<void> => {
     Logger.http(`GET information about auctions}`);
@@ -185,25 +186,18 @@ const listAuctions = async (req: Request, res: Response): Promise<void> => {
 
 const listOneAuction = async (req: Request, res: Response): Promise<void> => {
     Logger.http(`Get information about one auction`);
-    // default query
-   /* let query = "select " +
-        "auctionId, title, description, categoryId, sellerId, sellerFirstName, sellerLastName, reserve, coalesce(numBids,0) as numBids, highestBid, endDate " +
-        "from " +
-        "(select auction.id as auctionId, title, description, reserve, seller_id as sellerId, category_id as categoryId, " +
-        "first_name as sellerFirstName, last_name as sellerLastName, end_date as endDate " +
-        "from auction left join user " +
-        "on auction.seller_id = user.id) as t1 left join " +
-        "(select auction_id, user_id, count(auction_id) as numBids, max(amount) as highestBid " +
-        "from auction_bid group by auction_id) as t2 on t1.auctionId = t2.auction_id"
-    // where param for id
+
+    // check if id is valid number
+    let auctionId: string;
     if (isNaN(parseInt(req.params.id, 10))) {
         res.status(404).send("Auction id is invalid");
         return;
+    } else {
+        auctionId = req.params.id;
     }
-    const idQuery = ` where auctionId = ${req.params.id}`;
-    query += idQuery;
+
     try {
-        const auctionData = await Auctions.getAuctions(query);
+        const auctionData = await Auctions.getOneAuction(auctionId);
         if (auctionData.length < 1) {
             res.status(404).send('The auction does not exit');
         } else {
@@ -215,7 +209,7 @@ const listOneAuction = async (req: Request, res: Response): Promise<void> => {
         if (!err.hasBeenLogged) Logger.error(err);
         res.statusMessage = 'Internal Server Error';
         res.status(500).send();
-    } */
+    }
 };
 
 
