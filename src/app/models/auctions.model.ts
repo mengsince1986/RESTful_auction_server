@@ -191,6 +191,70 @@ const ifBidPlaced = async (auctionId: string): Promise<any> => {
     const [result] = await conn.query(query, [auctionId]);
     conn.release();
     return result.length > 0;
+};
+
+const alterAuction = async (auctionId: number, title: string, description: string, reserve: number, categoryId: number, endDate: string): Promise<any> => {
+    Logger.info(`Altering an auction`);
+    // base update query
+    let query = "update auction";
+    // update tile query
+    if (title !== null) {
+        if (!query.includes(" set ")) {
+            query += " set";
+        } else {
+            query += ", ";
+        }
+        const updateTitleQuery = ` title = "${title}"`;
+        query += updateTitleQuery;
+    }
+    // update description query
+    if (description !== null) {
+        if (!query.includes(" set ")) {
+            query += " set";
+        } else {
+            query += ", ";
+        }
+        const updateDescriptionQuery = ` description = "${description}"`;
+        query += updateDescriptionQuery;
+    }
+    // check reserve
+    if (reserve !== null) {
+        if (!query.includes(" set ")) {
+            query += " set";
+        } else {
+            query += ", ";
+        }
+        const updateReserveQuery = ` reserve = "${reserve}"`;
+        query += updateReserveQuery;
+    }
+    // check categoryId
+    if (categoryId !== null) {
+        if (!query.includes(" set ")) {
+            query += " set";
+        } else {
+            query += ", ";
+        }
+        const updateCategoryIdQuery = ` category_id = "${categoryId}"`;
+        query += updateCategoryIdQuery;
+    }
+    // check endDate
+    if (endDate !== null) {
+        if (!query.includes(" set ")) {
+            query += " set";
+        } else {
+            query += ", ";
+        }
+        const updateEndDateQuery = ` end_date = "${endDate}"`;
+        query += updateEndDateQuery;
+    }
+    // where query
+    query += ` where id = ${auctionId}`;
+    // update
+    Logger.info(query);
+    const conn = await getPool().getConnection();
+    const result = await conn.query(query);
+    conn.release();
+    return result;
 }
 
-export { getAuctions, getOneAuction, insertAuction, ifValidCategoryId, getCategories, removeOneAuction, ifBidPlaced }
+export { getAuctions, getOneAuction, insertAuction, ifValidCategoryId, getCategories, removeOneAuction, ifBidPlaced, alterAuction }

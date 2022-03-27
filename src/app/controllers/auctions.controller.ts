@@ -211,7 +211,8 @@ const deleteAuction = async (req: UserAuthInfoRequest, res: Response): Promise<v
             res.status(403).send("Can't remove auction at which has been placed bid.");
             return;
         }else {
-            const result = await Auctions.removeOneAuction(auctionId);
+            // const result = await Auctions.removeOneAuction(auctionId);
+            await Auctions.removeOneAuction(auctionId);
             res.status(200).send(`Auction ${auctionId} has been removed`);
         }
     } catch (err) {
@@ -221,8 +222,94 @@ const deleteAuction = async (req: UserAuthInfoRequest, res: Response): Promise<v
     }
 };
 
-const updateAuction = async (req: UserAuthInfoRequest, rep: Response): Promise<void> => {
+const updateAuction = async (req: UserAuthInfoRequest, res: Response): Promise<void> => {
     Logger.http(`PATCH an auction`);
+    // check if id is valid number
+    let auctionId: string;
+    if (isNaN(parseInt(req.params.id, 10))) {
+        res.status(404).send("Auction id is invalid");
+        return;
+    } else {
+        auctionId = req.params.id;
+    }
+    // check if auction of id belongs to current signed-in user
+    // check if bid has been placed
+    const currentUserId = parseInt(req.authenticatedUserId, 10);
+    try {
+        const toUpdateAuction = await Auctions.getOneAuction(auctionId);
+        if (Object.keys(toUpdateAuction).length === 0) {
+            res.status(404).send("The auction does not exist.");
+            return;
+        } else if (toUpdateAuction[0].sellerId !== currentUserId) {
+            res.status(403).send("Can't update auction that doesn't belong to the current user.");
+            return;
+        } else if (await Auctions.ifBidPlaced(auctionId)) {
+            res.status(403).send("Can't update auction at which has been placed bid.");
+            return;
+        }else {
+            // ready to update auction
+            // Available attributes to update: title, description, reserve, categoryId, endDate
+            // check title
+            let title: string;
+            if (typeof req.body.title === "string" && req.body.title.length > 0) {
+                title = req.body.title;
+            } else {
+                title = null;
+            }
+            // check description
+            let description: string;
+            if (typeof req.body.description === "string" && req.body.description.length > 0) {
+                description = req.body.description;
+            } else {
+                description = null;
+            }
+            // check reserve
+            let reserve: number;
+            if (typeof req.body.reserve === "number") {
+                reserve = req.body.reserve;
+            } else {
+                reserve = null;
+            }
+            // check categoryId
+            let categoryId: number;
+            if (typeof req.body.categoryId === "number") {
+                try {
+                    const isValidCategoryId = await Auctions.ifValidCategoryId(req.body.categoryId);
+                    if (isValidCategoryId) {
+                        categoryId = req.body.categoryId;
+                    } else {
+                        res.status(400).send('categoryId does not exist');
+                        return;
+                    }
+                } catch (err) {
+                    if (!err.hasBeenLogged) Logger.error(err);
+                    res.statusMessage = 'Internal Server Error';
+                    res.status(500).send();
+                    return;
+                }
+            } else {
+                categoryId = null;
+            }
+            // check endDate
+            let endDate: string;
+            if (typeof req.body.endDate === "string" && typeof Date.parse(req.body.endDate) === "number") {
+                if (Date.parse(req.body.endDate) > Date.now()) {
+                    endDate = req.body.endDate;
+                } else {
+                    res.status(400).send('The endDate should be in the future');
+                    return;
+                }
+            } else {
+                endDate = null;
+            }
+            await Auctions.alterAuction(parseInt(auctionId, 10), title, description, reserve, categoryId, endDate);
+            res.status(200).send("Auction is updated");
+        }
+    } catch (err) {
+        if (!err.hasBeenLogged) Logger.error(err);
+        res.statusMessage = 'Internal Server Error';
+        res.status(500).send();
+    }
 };
 
 /*
