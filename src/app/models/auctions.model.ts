@@ -168,4 +168,14 @@ const ifValidCategoryId = async (categoryId: number): Promise<any> => {
     return result.length > 0;
 };
 
-export { getAuctions, getOneAuction, insertAuction, ifValidCategoryId }
+const getCategories = async (): Promise<any> => {
+    Logger.info(`Getting all auction categories`);
+    const conn = await getPool().getConnection();
+    // default query
+    const query = `select * from category`;
+    const [result] = await conn.query(query);
+    conn.release();
+    return result;
+}
+
+export { getAuctions, getOneAuction, insertAuction, ifValidCategoryId, getCategories }

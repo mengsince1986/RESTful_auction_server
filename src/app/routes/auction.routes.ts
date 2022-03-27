@@ -9,6 +9,9 @@ module.exports = (app: Express) => {
         .get(auctions.listAuctions)
         .post(Authenticate.loginRequired, auctions.createAuction);
 
+    app.route(rootUrl + '/auctions/categories')
+        .get(auctions.listCategories);
+
     app.route(rootUrl + '/auctions/:id')
         .get(auctions.listOneAuction);
 };

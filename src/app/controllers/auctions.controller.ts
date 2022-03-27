@@ -174,6 +174,19 @@ const createAuction = async (req: UserAuthInfoRequest, res: Response): Promise<v
     }
 }
 
+const listCategories = async (req: Request, res: Response): Promise<void> => {
+    Logger.http(`GET information of all auction categories`);
+    try {
+        const result = await Auctions.getCategories();
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(result);
+    } catch (err) {
+        if (!err.hasBeenLogged) Logger.error(err);
+        res.statusMessage = 'Internal Server Error';
+        res.status(500).send();
+    }
+}
+
 /*
 const readUser = async (req: Request, res: Response):Promise<void> => {
     Logger.http(`GET information about user ${req.params.id}`);
@@ -208,4 +221,4 @@ const readUser = async (req: Request, res: Response):Promise<void> => {
 };
  */
 
-export { listAuctions, listOneAuction, createAuction }
+export { listAuctions, listOneAuction, createAuction, listCategories }
