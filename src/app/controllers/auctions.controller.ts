@@ -20,6 +20,8 @@ const listAuctions = async (req: Request, res: Response): Promise<void> => {
     if (req.query.q !== undefined) {
         if (!query.includes(" where ")) {
             query += " where";
+        } else {
+            query += " and";
         }
         const qQuery = ` t1.title like "%${req.query.q}%" or t1.description like "%${req.query.q}%"`;
         query += qQuery;
@@ -28,6 +30,8 @@ const listAuctions = async (req: Request, res: Response): Promise<void> => {
     if (req.query.categoryIds !== undefined) {
         if (!query.includes(" where ")) {
            query += " where";
+        } else {
+            query += " and";
         }
         if (Array.isArray(req.query.categoryIds)) {
             let currentCategoryId = req.query.categoryIds[0];
@@ -47,6 +51,8 @@ const listAuctions = async (req: Request, res: Response): Promise<void> => {
     if (req.query.sellerId !== undefined) {
         if (!query.includes(" where ")) {
             query += " where";
+        } else {
+            query += " and";
         }
         const sellerIdQuery = ` t1.sellerId = ${req.query.sellerId}`;
         query += sellerIdQuery;
@@ -55,18 +61,47 @@ const listAuctions = async (req: Request, res: Response): Promise<void> => {
     if (req.query.bidderId !== undefined) {
         if (!query.includes(" where ")) {
             query += " where";
+        } else {
+            query += " and";
         }
         const bidderIdQuery = ` t2.user_id = ${req.query.bidderId}`;
         query += bidderIdQuery;
     }
     // order query
     if (req.query.sortBy !== undefined) {
-        // some code
+        let orderQuery = "";
+        switch(req.query.sortBy) {
+            case "ALPHABETICAL_ASC":
+                orderQuery = " order by title asc";
+                break;
+            case "ALPHABETICAL_DESC":
+                orderQuery = " order by title desc";
+                break;
+            case "CLOSING_SOON":
+                orderQuery = " order by endDate asc";
+                break;
+            case "CLOSING_LAST":
+                orderQuery = " order by endDate desc";
+                break;
+            case "BIDS_ASC":
+                orderQuery = " order by highestBid asc";
+                break;
+            case "BIDS_DESC":
+                orderQuery = " order by highestBid desc";
+                break;
+            case "RESERVE_ASC":
+                orderQuery = " order by reserve asc";
+                break;
+            case "RESERVE_DESC":
+                orderQuery = " order by reserve desc";
+                break;
+        }
+        query += orderQuery;
     } else {
         const orderQuery = " order by endDate, auction_id asc";
         query += orderQuery;
     }
-    // where query for startIndex and count
+    // limit query for startIndex and count
     let offset: any = 0;
     let rowcount: any = 1844674407370955161;
     if (req.query.startIndex !== undefined) {
@@ -78,6 +113,8 @@ const listAuctions = async (req: Request, res: Response): Promise<void> => {
     const startIndexQuery = ` limit ${offset}, ${rowcount}`;
     query += startIndexQuery;
     try {
+        // tslint:disable-next-line:no-console
+        console.log(query);
         const auctionData = await Auctions.getAuctions(query);
         const result = {count: auctionData.length, auctions: auctionData}
         res.setHeader('Content-Type', 'application/json');
