@@ -3,7 +3,7 @@ import Logger from '../../config/logger';
 import * as Auctions from '../models/auctions.model';
 import * as Authenticate from '../models/authentication.model';
 import { UserAuthInfoRequest } from "../../types";
-
+/*
 const listAuctions = async (req: Request, res: Response): Promise<void> => {
     Logger.http(`GET information about auctions}`);
     // default query
@@ -113,8 +113,6 @@ const listAuctions = async (req: Request, res: Response): Promise<void> => {
     const startIndexQuery = ` limit ${offset}, ${rowcount}`;
     query += startIndexQuery;
     try {
-        // tslint:disable-next-line:no-console
-        console.log(query);
         const auctionData = await Auctions.getAuctions(query);
         const result = {count: auctionData.length, auctions: auctionData}
         res.setHeader('Content-Type', 'application/json');
@@ -124,6 +122,105 @@ const listAuctions = async (req: Request, res: Response): Promise<void> => {
         res.statusMessage = 'Internal Server Error';
         res.status(500).send();
     }
+}
+*/
+
+const listAuctions = async (req: Request, res: Response): Promise<void> => {
+    Logger.http(`GET information about auctions}`);
+    let startIndex: string|null;
+    if (typeof req.query.startIndex === "string") {
+        startIndex = req.query.startIndex;
+    } else {
+        startIndex = null;
+    }
+    let count: string|null;
+    if (typeof req.query.count === "string") {
+        count = req.query.count;
+    } else {
+        count = null;
+    }
+    let q: string|null;
+    if (typeof req.query.q === "string") {
+        q = req.query.q as string;
+    } else {
+        q = null;
+    }
+    let categoryIds: string|string[]|null;
+    if (typeof req.query.categoryIds === "string") {
+        categoryIds = req.query.categoryIds;
+    } else if (Array.isArray(req.query.categoryIds)) {
+        categoryIds = req.query.categoryIds as string[];
+    } else {
+        categoryIds = null;
+    }
+    let sellerId: string|null;
+    if (typeof req.query.sellerId === "string") {
+        sellerId = req.query.sellerId;
+    } else {
+        sellerId = null;
+    }
+    let bidderId: string|null;
+    if (typeof req.query.bidderId === "string") {
+        bidderId = req.query.bidderId;
+    } else {
+        bidderId = null;
+    }
+    let sortBy: string|null;
+    if (typeof req.query.sortBy === "string") {
+        sortBy = req.query.sortBy;
+    } else {
+        sortBy = null;
+    }
+    try {
+        const auctionData = await Auctions.getAuctions(startIndex, count, q, categoryIds, sellerId, bidderId, sortBy);
+        const result = {count: auctionData.length, auctions: auctionData}
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(JSON.stringify(result));
+    } catch (err) {
+        if (!err.hasBeenLogged) Logger.error(err);
+        res.statusMessage = 'Internal Server Error';
+        res.status(500).send();
+    }
+};
+
+const listOneAuction = async (req: Request, res: Response): Promise<void> => {
+    Logger.http(`Get information about one auction`);
+    // default query
+   /* let query = "select " +
+        "auctionId, title, description, categoryId, sellerId, sellerFirstName, sellerLastName, reserve, coalesce(numBids,0) as numBids, highestBid, endDate " +
+        "from " +
+        "(select auction.id as auctionId, title, description, reserve, seller_id as sellerId, category_id as categoryId, " +
+        "first_name as sellerFirstName, last_name as sellerLastName, end_date as endDate " +
+        "from auction left join user " +
+        "on auction.seller_id = user.id) as t1 left join " +
+        "(select auction_id, user_id, count(auction_id) as numBids, max(amount) as highestBid " +
+        "from auction_bid group by auction_id) as t2 on t1.auctionId = t2.auction_id"
+    // where param for id
+    if (isNaN(parseInt(req.params.id, 10))) {
+        res.status(404).send("Auction id is invalid");
+        return;
+    }
+    const idQuery = ` where auctionId = ${req.params.id}`;
+    query += idQuery;
+    try {
+        const auctionData = await Auctions.getAuctions(query);
+        if (auctionData.length < 1) {
+            res.status(404).send('The auction does not exit');
+        } else {
+            const result = auctionData[0];
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).send(JSON.stringify(result));
+        }
+    } catch (err) {
+        if (!err.hasBeenLogged) Logger.error(err);
+        res.statusMessage = 'Internal Server Error';
+        res.status(500).send();
+    } */
+};
+
+
+const createAuction = async (req: Request, res: Response): Promise<void> => {
+    Logger.http(`POST create a new auction`);
 }
 
 /*
@@ -158,7 +255,6 @@ const readUser = async (req: Request, res: Response):Promise<void> => {
         res.status(500).send();
     }
 };
-*/
+ */
 
-
-export { listAuctions }
+export { listAuctions, listOneAuction, createAuction }
