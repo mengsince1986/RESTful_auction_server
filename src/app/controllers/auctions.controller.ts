@@ -6,18 +6,65 @@ import { UserAuthInfoRequest } from "../../types";
 
 const listAuctions = async (req: Request, res: Response): Promise<void> => {
     Logger.http(`GET information about auctions}`);
-    const query = "select " +
-        "auctionId, title, reserve, sellerId, categoryId, sellerFirstName, sellerLastName, endDate, coalesce(numBids,0), highestBid " +
+    // default query
+    let query = "select " +
+        "auctionId, title, reserve, sellerId, categoryId, sellerFirstName, sellerLastName, endDate, coalesce(numBids,0) as numBids, highestBid " +
         "from " +
         "(select auction.id as auctionId, title, reserve, seller_id as sellerId, category_id as categoryId, " +
         "first_name as sellerFirstName, last_name as sellerLastName, end_date as endDate " +
         "from auction left join user " +
         "on auction.seller_id = user.id) as t1 left join " +
-        "(select auction_id, user_id, count(auction_id) as numBids, max(amount) as highestBid from auction_bid group by auction_id) as t2 " +
-        "on t1.auctionId = t2.auction_id order by endDate, auction_id asc"
+        "(select auction_id, user_id, count(auction_id) as numBids, max(amount) as highestBid " +
+        "from auction_bid group by auction_id) as t2 on t1.auctionId = t2.auction_id"
+
+    // where query for categoryIds
+    if (req.query.categoryIds !== undefined) {
+        if (!query.includes(" where ")) {
+           query += " where";
+        }
+        if (Array.isArray(req.query.categoryIds)) {
+            let currentCategoryId = req.query.categoryIds[0];
+            let categoryIdsQuery =  ` categoryId = ${currentCategoryId}`;
+            query += categoryIdsQuery;
+            for (let i = 1; i < req.query.categoryIds.length; i++) {
+                currentCategoryId = req.query.categoryIds[i];
+                categoryIdsQuery =  ` or categoryId = ${currentCategoryId}`;
+                query += categoryIdsQuery;
+            }
+        } else {
+            const categoryIdsQuery = ` categoryId = ${req.query.categoryIds}`;
+            query += categoryIdsQuery;
+        }
+    }
+    // where query for bidderId
+    if (req.query.bidderId !== undefined) {
+        if (!query.includes(" where ")) {
+            query += " where";
+        }
+        const bidderIdQuery = ` t2.user_id = ${req.query.bidderId}`
+        query += bidderIdQuery;
+    }
+    // order query
+    if (req.query.sortBy !== undefined) {
+        // some code
+    } else {
+        const orderQuery = " order by endDate, auction_id asc";
+        query += orderQuery;
+    }
+    // where query for startIndex and count
+    let offset: any = 0;
+    let rowcount: any = 1844674407370955161;
+    if (req.query.startIndex !== undefined) {
+        offset = req.query.startIndex;
+    }
+    if (req.query.count !== undefined) {
+        rowcount = req.query.count;
+    }
+    const startIndexQuery = ` limit ${offset}, ${rowcount}`
+    query += startIndexQuery;
     try {
         const auctionData = await Auctions.getAuctions(query);
-        const result = {auctions: auctionData, count: auctionData.length}
+        const result = {count: auctionData.length, auctions: auctionData}
         res.setHeader('Content-Type', 'application/json');
         res.status(200).send(JSON.stringify(result));
     } catch (err) {
