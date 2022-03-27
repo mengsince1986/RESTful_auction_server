@@ -221,6 +221,10 @@ const deleteAuction = async (req: UserAuthInfoRequest, res: Response): Promise<v
     }
 };
 
+const updateAuction = async (req: UserAuthInfoRequest, rep: Response): Promise<void> => {
+    Logger.http(`PATCH an auction`);
+};
+
 /*
 const readUser = async (req: Request, res: Response):Promise<void> => {
     Logger.http(`GET information about user ${req.params.id}`);
@@ -255,4 +259,4 @@ const readUser = async (req: Request, res: Response):Promise<void> => {
 };
  */
 
-export { listAuctions, listOneAuction, createAuction, listCategories, deleteAuction }
+export { listAuctions, listOneAuction, createAuction, listCategories, deleteAuction, updateAuction }
