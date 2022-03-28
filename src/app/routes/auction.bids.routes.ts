@@ -6,6 +6,7 @@ import * as Authenticate from '../middleware/authenticate';
 module.exports = (app: Express) => {
 
     app.route(rootUrl + '/auctions/:id/bids')
-        .get(bids.listBids);
+        .get(bids.listBids)
+        .post(Authenticate.loginRequired, bids.createBid);
 
 };
