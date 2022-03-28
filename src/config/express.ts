@@ -25,6 +25,7 @@ export default () => {
     require('../app/routes/user.routes')(app);
     require('../app/routes/auction.routes')(app);
     require('../app/routes/auction.bids.routes')(app);
+    require('../app/routes/auctions.images.routes')(app);
     return app;
 
 };
