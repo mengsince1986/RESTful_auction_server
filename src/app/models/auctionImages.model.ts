@@ -1,5 +1,30 @@
 import {getPool} from "../../config/db";
 import Logger from "../../config/logger";
+import fs from "mz/fs";
+// tslint:disable-next-line:no-var-requires
+const mime = require('mime-types');
+const auctionImageDir = "./storage/images/";
+
+const getAuctionImage = async (auctionId: string): Promise<any> => {
+    Logger.info(`Getting image for an auction`);
+    const conn = await getPool().getConnection();
+    const query = "select * from auction where id = ?";
+    const [auction] = await conn.query(query, [auctionId]);
+    conn.release();
+    if (auction.length === 0) {
+        return null;
+    } else {
+        const imageFileName:string = auction[0].image_filename;
+        const imageFilePath:string = auctionImageDir + imageFileName;
+        if (await fs.exists(imageFilePath)) {
+            const image = await fs.readFile(imageFilePath);
+            const imageType = mime.lookup(imageFileName);
+            return {image, imageType};
+        } else {
+            return null;
+        }
+    }
+};
 
 /*
 const getBids = async (id: string): Promise<any> => {
@@ -15,4 +40,4 @@ const getBids = async (id: string): Promise<any> => {
 };
 */
 
-export {}
+export {getAuctionImage}

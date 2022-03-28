@@ -1,10 +1,7 @@
 import {Request, Response} from "express";
 import Logger from '../../config/logger';
-import * as Bids from '../models/bids.model';
 import { UserAuthInfoRequest } from "../../types";
 import * as AuctionImages from "../models/auctionImages.model";
-
-import fs from "mz/fs";
 
 const retrieveAuctionImage = async (req: Request, res: Response): Promise<void> => {
     Logger.http(`GET auction's hero image`);
@@ -17,14 +14,15 @@ const retrieveAuctionImage = async (req: Request, res: Response): Promise<void> 
         auctionId = req.params.id;
     }
     try {
-        const auction = await AuctionImages.getAuctionImage(auctionId);
-        if (auction.length < 1) {
-            res.status(404).send('No bids available');
+        const imageData = await AuctionImages.getAuctionImage(auctionId);
+        if (imageData === null) {
+            res.status(404).send('The image is not available');
             return;
         } else {
-            const imageName = auction[0].image_filename;
-            res.setHeader('Content-Type', 'image');
-            res.status(200).send("image");
+            const image = imageData.image;
+            const imageType = imageData.imageType;
+            res.setHeader('Content-Type', imageType);
+            res.status(200).send(image);
         }
     } catch (err) {
         if (!err.hasBeenLogged) Logger.error(err);
@@ -60,4 +58,4 @@ const listBids = async  (req: Request, res: Response): Promise<void> => {
 };
 */
 
-export { }
+export { retrieveAuctionImage }
