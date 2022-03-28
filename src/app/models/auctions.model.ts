@@ -1,16 +1,6 @@
 import {getPool} from "../../config/db";
 import Logger from "../../config/logger";
 
-/*
-const getAuctions = async (query: string): Promise<any> => {
-    Logger.info(`Getting selected auctions`);
-    const conn = await getPool().getConnection();
-    const [result] = await conn.query(query);
-    conn.release();
-    return result;
-};
-*/
-
 const getAuctions = async (startIndex: string|null, count: string|null, q: string|null, categoryIds: string|string[]|null,
                            sellerId: string|null, bidderId: string|null, sortBy: string|null): Promise<any> => {
     Logger.info(`Getting selected auctions`);

@@ -24,6 +24,7 @@ export default () => {
     require('../app/routes/backdoor.routes')(app);
     require('../app/routes/user.routes')(app);
     require('../app/routes/auction.routes')(app);
+    require('../app/routes/auction.bids.routes')(app);
     return app;
 
 };
