@@ -6,6 +6,6 @@ import * as Authenticate from '../middleware/authenticate';
 module.exports = (app: Express) => {
 
     app.route(rootUrl + '/auctions/:id/image')
-        .get(auctionImages.listAuctionImage);
+        .get(auctionImages.retrieveAuctionImage);
 
 };
