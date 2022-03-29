@@ -53,6 +53,7 @@ const setAuctionImage = async (req: UserAuthInfoRequest, res: Response): Promise
         return;
     }
     // check if image is provided
+    /*
     let image;
     if (Object.keys(req.body).length === 0) {
         res.status(400).send("Cannot find image file in Request");
@@ -60,6 +61,8 @@ const setAuctionImage = async (req: UserAuthInfoRequest, res: Response): Promise
     } else {
         image = req.body;
     }
+    */
+    const image = req.body;
     try {
         // check if the auction exist
         // check if the signed-in user is the seller of the auction

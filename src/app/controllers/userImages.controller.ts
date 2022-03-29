@@ -55,6 +55,7 @@ const setUserImage = async (req: UserAuthInfoRequest, res: Response): Promise<vo
         return;
     }
     // check if image file is provided
+    /*
     let image;
     if (Object.keys(req.body).length === 0) {
         res.status(400).send("Cannot find image file in Request");
@@ -62,6 +63,8 @@ const setUserImage = async (req: UserAuthInfoRequest, res: Response): Promise<vo
     } else {
         image = req.body;
     }
+    */
+    const image = req.body;
     try {
         // check if user image is already created
         const createdUserImage = await UserImages.getUserImage(userId);
