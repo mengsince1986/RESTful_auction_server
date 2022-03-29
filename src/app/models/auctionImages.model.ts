@@ -1,6 +1,7 @@
 import {getPool} from "../../config/db";
 import Logger from "../../config/logger";
-import fs from "mz/fs";
+// tslint:disable-next-line:no-var-requires
+const fs = require('mz/fs')
 // tslint:disable-next-line:no-var-requires
 const mime = require('mime-types');
 const auctionImageDir = "./storage/images/";
@@ -26,6 +27,23 @@ const getAuctionImage = async (auctionId: string): Promise<any> => {
     }
 };
 
+const insertAuctionImage = async (auctionId: string, image: any, imageType: string): Promise<any> => {
+    Logger.info(`Updating image for an auction`);
+    const conn = await getPool().getConnection();
+    let auctionImageExtension = imageType.split("/")[1];
+    if (auctionImageExtension === "jpeg") {
+        auctionImageExtension = "jpg";
+    }
+    const auctionImageName = `auction_${auctionId}.${auctionImageExtension}`;
+    const auctionImagePath = auctionImageDir + auctionImageName;
+    // Store image on server
+    await fs.writeFile(auctionImagePath, image);
+    // Update dataset with new image name
+    const query = "update auction set image_filename = ? where id = ?";
+    await conn.query(query, [auctionImageName, auctionId]);
+    conn.release();
+};
+
 /*
 const getBids = async (id: string): Promise<any> => {
     Logger.info(`Getting bids for an auction`);
@@ -40,4 +58,4 @@ const getBids = async (id: string): Promise<any> => {
 };
 */
 
-export {getAuctionImage}
+export { getAuctionImage, insertAuctionImage }

@@ -28,5 +28,6 @@ typings/
 
 # For auction site
 src/storage/photos/*
+/storage/images/*
 !src/storage/photos/.gitkeep
 dist
