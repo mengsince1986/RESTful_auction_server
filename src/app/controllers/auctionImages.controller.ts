@@ -49,12 +49,11 @@ const setAuctionImage = async (req: UserAuthInfoRequest, res: Response): Promise
     if (validImageTypes.includes(req.header("Content-Type"))) {
         imageType = req.header("Content-Type");
     } else {
-        res.status(400).send("The Request Content-Type is invalid.");
+        res.status(400).send("The auction image  Request Content-Type is invalid.");
         return;
     }
     // check if image is provided
     let image;
-    Logger.info("req.body length inside: " + Object.keys(req.body).length);
     if (Object.keys(req.body).length === 0) {
         res.status(400).send("Cannot find image file in Request");
         return;
@@ -70,13 +69,13 @@ const setAuctionImage = async (req: UserAuthInfoRequest, res: Response): Promise
             res.status(400).send("The auction does not exist");
             return;
         } else if (toUpdateAuction[0].sellerId !== currentUserId) {
-            res.status(401).send("The current user is unauthorized to add image to this auction");
+            res.status(403).send("The current user cannot add image to this auction");
             return;
         } else {
             // check if hero image is already created
             const createdAuctionImage = await AuctionImages.getAuctionImage(auctionId);
             // set or create hero image
-            const result = await AuctionImages.insertAuctionImage(auctionId, image, imageType);
+            await AuctionImages.insertAuctionImage(auctionId, image, imageType);
             // send response
             if (createdAuctionImage === null) {
                 res.status(201).send("Auction image is created");
@@ -90,32 +89,5 @@ const setAuctionImage = async (req: UserAuthInfoRequest, res: Response): Promise
         res.status(500).send();
     }
 };
-
-/*
-const listBids = async  (req: Request, res: Response): Promise<void> => {
-    Logger.http(`Get information about bids for one auction`);
-    // check if id is valid number
-    let auctionId: string;
-    if (isNaN(parseInt(req.params.id, 10))) {
-        res.status(404).send("Auction id is invalid");
-        return;
-    } else {
-        auctionId = req.params.id;
-    }
-    try {
-        const bidsData = await Bids.getBids(auctionId);
-        if (bidsData.length < 1) {
-            res.status(404).send('No bids available');
-        } else {
-            res.setHeader('Content-Type', 'application/json');
-            res.status(200).send(JSON.stringify(bidsData));
-        }
-    } catch (err) {
-        if (!err.hasBeenLogged) Logger.error(err);
-        res.statusMessage = 'Internal Server Error';
-        res.status(500).send();
-    }
-};
-*/
 
 export { retrieveAuctionImage, setAuctionImage }
