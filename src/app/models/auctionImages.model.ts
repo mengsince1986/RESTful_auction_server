@@ -12,7 +12,9 @@ const getAuctionImage = async (auctionId: string): Promise<any> => {
     const query = "select * from auction where id = ?";
     const [auction] = await conn.query(query, [auctionId]);
     conn.release();
-    if (auction.length === 0) {
+    // check if auction exists
+    // check if auction image exists
+    if (auction.length === 0 || auction[0].image_filename === null) {
         return null;
     } else {
         const imageFileName:string = auction[0].image_filename;

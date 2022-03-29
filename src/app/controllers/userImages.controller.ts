@@ -2,7 +2,6 @@ import {Request, Response} from "express";
 import Logger from '../../config/logger';
 import { UserAuthInfoRequest } from "../../types";
 import * as UserImages from "../models/userImages.model";
-import * as Users from "../models/users.model";
 const validImageTypes = ["image/png", "image/jpeg", "image/gif"];
 
 const retrieveUserImage = async (req: Request, res: Response): Promise<void> => {
@@ -36,9 +35,13 @@ const retrieveUserImage = async (req: Request, res: Response): Promise<void> => 
 const setUserImage = async (req: UserAuthInfoRequest, res: Response): Promise<void> => {
     Logger.http(`PUT user's image`);
     // check if id is valid number
+    // check if the signed-in user id is the same with the request user id
     let userId: string;
     if (isNaN(parseInt(req.params.id, 10))) {
         res.status(400).send("User ID is invalid");
+        return;
+    } else if (parseInt(req.params.id, 10) !== parseInt(req.authenticatedUserId, 10)) {
+        res.status(403).send("The current user cannot change the image of this user account");
         return;
     } else {
         userId = req.params.id;
@@ -60,29 +63,15 @@ const setUserImage = async (req: UserAuthInfoRequest, res: Response): Promise<vo
         image = req.body;
     }
     try {
-        // check if the user exist
-        // check if the signed-in user id is the same with the request use id
-        const currentUserId: number = parseInt(req.authenticatedUserId, 10);
-        const toUpdateUser = await Users.getOneUser(parseInt(userId, 10));
-        Logger.info(`Current user id: ${currentUserId}`);
-        Logger.info(`to update user id: ${toUpdateUser[0].id}`);
-        if (toUpdateUser.length < 1) {
-            res.status(400).send("The user id does not exist");
-            return;
-        } else if (toUpdateUser[0].id !== currentUserId) {
-            res.status(403).send("The current user cannot add image to this user account");
-            return;
+        // check if user image is already created
+        const createdUserImage = await UserImages.getUserImage(userId);
+        // set or create user image
+        await UserImages.insertUserImage(userId, image, imageType);
+        // send response
+        if (createdUserImage === null) {
+            res.status(201).send("User image is created");
         } else {
-            // check if user image is already created
-            const createdUserImage = await UserImages.getUserImage(userId);
-            // set or create user image
-            await UserImages.insertUserImage(userId, image, imageType);
-            // send response
-            if (createdUserImage === null) {
-                res.status(201).send("User image is created");
-            } else {
-                res.status(200).send("User image is updated");
-            }
+            res.status(200).send("User image is updated");
         }
     } catch (err) {
         if (!err.hasBeenLogged) Logger.error(err);
@@ -91,4 +80,34 @@ const setUserImage = async (req: UserAuthInfoRequest, res: Response): Promise<vo
     }
 };
 
-export { retrieveUserImage, setUserImage }
+const deleteUserImage = async (req: UserAuthInfoRequest, res: Response): Promise<void> => {
+    Logger.http(`DELETE user image`);
+    // check if id is valid number
+    // check if the signed-in user id is the same with the request user id
+    let userId: string;
+    if (isNaN(parseInt(req.params.id, 10))) {
+        res.status(400).send("User ID is invalid");
+        return;
+    } else if (parseInt(req.params.id, 10) !== parseInt(req.authenticatedUserId, 10)) {
+        res.status(403).send("The current user cannot remove the image of this user account");
+        return;
+    } else {
+        userId = req.params.id;
+    }
+    try {
+        // check if user image exists
+        if (await UserImages.getUserImage(userId) === null) {
+            res.status(200).send("User has no profile image");
+            return;
+        } else {
+            await UserImages.removeUserImage(userId);
+            res.status(200).send(`User image has been removed`);
+        }
+    } catch (err) {
+        if (!err.hasBeenLogged) Logger.error(err);
+        res.statusMessage = 'Internal Server Error';
+        res.status(500).send();
+    }
+};
+
+export { retrieveUserImage, setUserImage, deleteUserImage }

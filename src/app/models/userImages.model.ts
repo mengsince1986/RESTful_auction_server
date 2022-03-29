@@ -12,7 +12,9 @@ const getUserImage = async (userId: string): Promise<any> => {
     const query = "select * from user where id = ?";
     const [user] = await conn.query(query, [userId]);
     conn.release();
-    if (user.length === 0) {
+    // check if user exists
+    // check if user's image exists
+    if (user.length === 0 || user[0].image_filename === null) {
         return null;
     } else {
         const imageFileName:string = user[0].image_filename;
@@ -44,4 +46,18 @@ const insertUserImage = async (userId: string, image: any, imageType: string): P
     conn.release();
 };
 
-export { getUserImage, insertUserImage }
+const removeUserImage = async (userId: string): Promise<any> => {
+    Logger.info(`Removing user image`);
+    const conn = await getPool().getConnection();
+    // remove image file from server
+    const query2 = "select * from user where id = ?";
+    const [user] = await conn.query(query2, [userId]);
+    const imageFileName:string = user[0].image_filename;
+    const imageFilePath:string = userImageDir + imageFileName;
+    await fs.unlink(imageFilePath);
+    // remove image file name from database
+    const query1 = "update user set image_filename = null where id = ?";
+    await conn.query(query1, [userId]);
+}
+
+export { getUserImage, insertUserImage, removeUserImage }

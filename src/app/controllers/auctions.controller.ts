@@ -210,7 +210,6 @@ const deleteAuction = async (req: UserAuthInfoRequest, res: Response): Promise<v
             res.status(403).send("Can't remove auction at which has been placed bid.");
             return;
         }else {
-            // const result = await Auctions.removeOneAuction(auctionId);
             await Auctions.removeOneAuction(auctionId);
             res.status(200).send(`Auction ${auctionId} has been removed`);
         }

@@ -66,7 +66,7 @@ const setAuctionImage = async (req: UserAuthInfoRequest, res: Response): Promise
         const currentUserId: number = parseInt(req.authenticatedUserId, 10);
         const toUpdateAuction = await Auctions.getOneAuction(auctionId);
         if (toUpdateAuction.length < 1) {
-            res.status(400).send("The auction does not exist");
+            res.status(404).send("The auction does not exist");
             return;
         } else if (toUpdateAuction[0].sellerId !== currentUserId) {
             res.status(403).send("The current user cannot add image to this auction");
