@@ -54,16 +54,7 @@ const setUserImage = async (req: UserAuthInfoRequest, res: Response): Promise<vo
         res.status(400).send("The Content-Type of user image request is invalid.");
         return;
     }
-    // check if image file is provided
-    /*
-    let image;
-    if (Object.keys(req.body).length === 0) {
-        res.status(400).send("Cannot find image file in Request");
-        return;
-    } else {
-        image = req.body;
-    }
-    */
+    // get image file from request body
     const image = req.body;
     try {
         // check if user image is already created

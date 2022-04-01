@@ -3,7 +3,6 @@ import Logger from '../../config/logger';
 import { UserAuthInfoRequest } from "../../types";
 import * as AuctionImages from "../models/auctionImages.model";
 import * as Auctions from "../models/auctions.model";
-import fs from "mz/fs";
 const validImageTypes = ["image/png", "image/jpeg", "image/gif"];
 
 const retrieveAuctionImage = async (req: Request, res: Response): Promise<void> => {
@@ -52,16 +51,7 @@ const setAuctionImage = async (req: UserAuthInfoRequest, res: Response): Promise
         res.status(400).send("The auction image  Request Content-Type is invalid.");
         return;
     }
-    // check if image is provided
-    /*
-    let image;
-    if (Object.keys(req.body).length === 0) {
-        res.status(400).send("Cannot find image file in Request");
-        return;
-    } else {
-        image = req.body;
-    }
-    */
+    // get image file from request body
     const image = req.body;
     try {
         // check if the auction exist
